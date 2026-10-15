@@ -74,6 +74,14 @@
   .chrome { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; }
   .brand { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.75rem; color: var(--cp-text); }
   .brand-logo { display: block; width: 232px; height: auto; flex: none; }
+  .brand-logo .cp-logo-icon > g {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: brand-icon-spin 12s linear infinite;
+    animation-play-state: paused;
+  }
+  .brand-logo:hover .cp-logo-icon > g { animation-play-state: running; }
+  @keyframes brand-icon-spin { to { transform: rotate(360deg); } }
   .brand-logo .cp-logo-wordmark [fill="white"] { fill: var(--cp-text); }
   .brand > .label { white-space: nowrap; transform: translateY(-1px); }
   @media (max-width: 600px) { .brand-logo { width: 160px; } }
