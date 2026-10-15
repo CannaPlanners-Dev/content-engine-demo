@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Content Engine · Live flow</title>
+<script>
+  try { if (localStorage.getItem("cp-appearance") === "light") document.documentElement.setAttribute("data-cp-theme", "light"); } catch (e) {}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  @property --cp-surface { syntax: "<color>"; inherits: true; initial-value: #111111; }
+  @property --cp-text { syntax: "<color>"; inherits: true; initial-value: #F3F0EA; }
+  @property --cp-muted { syntax: "<color>"; inherits: true; initial-value: #A39E96; }
+  @property --cp-line { syntax: "<color>"; inherits: true; initial-value: #2A2A28; }
+  @property --cp-panel { syntax: "<color>"; inherits: true; initial-value: #1D1D1C; }
+  @property --cp-hero-veil { syntax: "<color>"; inherits: true; initial-value: rgba(17,17,17,0.6); }
+
+  :root {
+    --cp-surface: #111111;
+    --cp-panel: #1D1D1C;
+    --cp-text: #F3F0EA;
+    --cp-muted: #A39E96;
+    --cp-line: #2A2A28;
+    --cp-hero-veil: rgba(17,17,17,0.6);
+    --cp-primary: #F6785A;
+    --cp-footer-bg: #0A0A0A;
+    --cp-footer-text: #F3F0EA;
+    --cp-footer-muted: #9C978F;
+    --font-display: "Space Grotesk", system-ui, sans-serif;
+    --font-body: "PP Telegraf", "Inter", system-ui, sans-serif;
+    --font-label: "Space Mono", ui-monospace, monospace;
+    --content: 760px;
+    --wide: 1240px;
+    --gutter: clamp(1.2rem, 4vw, 4rem);
+    --hero-inset: clamp(0.375rem, 0.8vw, 0.875rem);
+    --edge: color-mix(in srgb, var(--cp-muted) 55%, transparent);
+  }
+  :root[data-cp-theme="light"] {
+    --cp-surface: #F3F0EA;
+    --cp-panel: #E7E2D9;
+    --cp-text: #121212;
+    --cp-muted: #5C5852;
+    --cp-line: #D6D0C6;
+    --cp-hero-veil: rgba(243,240,234,0.6);
+  }
+  :root.cp-animate { transition: --cp-surface 650ms, --cp-text 650ms, --cp-muted 650ms, --cp-line 650ms, --cp-panel 650ms, --cp-hero-veil 650ms; }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--cp-surface);
+    color: var(--cp-text);
+    font-family: var(--font-body);
+    font-size: 1.0625rem;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible { outline: 3px solid currentColor; outline-offset: 5px; }
+
+  .label { font-family: var(--font-label); font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--cp-muted); }
+
+  /* Hero */
+  .hero {
+    margin: var(--hero-inset);
+    background: var(--cp-panel);
+    border-radius: 32px;
+    padding: clamp(2rem, 5vw, 4.5rem) var(--gutter);
+  }
+  .hero-inner { max-width: var(--wide); margin: 0 auto; display: grid; gap: 1.5rem; }
+  .chrome { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+  .brand { display: flex; align-items: center; gap: 0.75rem; color: var(--cp-text); }
+  .roundel { width: 18px; height: 18px; border-radius: 50%; background: var(--cp-primary); flex: none; }
+  .hero h1 {
+    font-family: var(--font-display); font-weight: 500; line-height: 1.02; letter-spacing: -0.03em;
+    font-size: clamp(2.6rem, 6vw, 5.4rem); margin: 1.5rem 0 0; max-width: 16ch;
+  }
+  .hero p.lede { margin: 0; max-width: 46ch; color: var(--cp-muted); font-size: clamp(1.1rem, 1.6vw, 1.35rem); line-height: 1.5; }
+  .kicker { color: var(--cp-primary); }
+
+  /* Buttons */
+  .btn {
+    font-family: var(--font-display); font-weight: 600; font-size: 0.85rem;
+    border: 0; border-radius: 999px; padding: 0 1.15rem; min-height: 44px;
+    background: var(--cp-surface); color: var(--cp-text); cursor: pointer;
+    transition: background-color 320ms, color 320ms, transform 320ms;
+  }
+  .btn[aria-pressed="true"] { background: var(--cp-text); color: var(--cp-surface); }
+  .btn:hover, .btn:focus-visible { background: var(--cp-primary); color: #fff; transform: translateY(-2px); }
+  .btn:focus-visible { outline-color: var(--cp-text); }
+
+  .theme-toggle { display: inline-flex; align-items: center; gap: 0.6rem; }
+  .thumb { width: 34px; height: 18px; border-radius: 999px; background: var(--cp-panel); position: relative; flex: none; }
+  .thumb::after { content: ""; position: absolute; top: 3px; left: 3px; width: 12px; height: 12px; border-radius: 50%; background: currentColor; transition: transform 550ms; }
+  :root[data-cp-theme="light"] .thumb::after { transform: translateX(16px); }
+
+  /* Toolbar */
+  .toolbar-wrap { position: sticky; top: 0; z-index: 5; background: var(--cp-surface); padding: 0.9rem var(--gutter); }
+  .toolbar { max-width: var(--wide); margin: 0 auto; display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; align-items: center; justify-content: space-between; }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .chips .btn { background: var(--cp-panel); }
+  .chips .btn[aria-pressed="true"] { background: var(--cp-text); color: var(--cp-surface); }
+  .chips .btn:hover, .chips .btn:focus-visible { background: var(--cp-primary); color: #fff; }
+  .readout { min-height: 44px; display: flex; align-items: center; gap: 0.75rem; max-width: 560px; font-size: 0.95rem; line-height: 1.4; color: var(--cp-muted); }
+  .readout strong { color: var(--cp-text); font-family: var(--font-display); font-weight: 500; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--cp-primary); flex: none; }
+
+  /* Chart field */
+  .field-wrap { padding: 0 var(--hero-inset) 0; }
+  .field {
+    background: var(--cp-panel);
+    border-radius: clamp(14px, 1.5vw, 26px);
+    padding: clamp(1.5rem, 3vw, 3rem) var(--gutter);
+    overflow-x: auto;
+  }
+  .chart { position: relative; width: var(--wide); margin: 0 auto; }
+  .chart svg { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
+  .lane-head { position: absolute; top: 0; }
+
+  .edge { fill: none; stroke: var(--edge); stroke-width: 1.5; stroke-linejoin: round; transition: stroke 320ms, opacity 400ms, stroke-width 320ms; }
+  .edge.dashed { stroke-dasharray: 5 6; }
+  .head { fill: var(--edge); transition: fill 320ms, opacity 400ms; }
+  .edge.hot { stroke: var(--cp-primary); stroke-width: 2.5; stroke-dasharray: 8 8; animation: flow 1.2s linear infinite; }
+  .head.hot { fill: var(--cp-primary); }
+  .dim { opacity: 0.16; }
+  @keyframes flow { to { stroke-dashoffset: -16; } }
+
+  .elabel {
+    position: absolute; transform: translate(-50%, -50%);
+    font-family: var(--font-label); font-size: 0.66rem; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--cp-muted); background: var(--cp-panel); padding: 0.2rem 0.6rem; border-radius: 999px;
+    white-space: nowrap; transition: opacity 400ms, color 320ms;
+  }
+  .elabel.hot { color: var(--cp-primary); }
+  .elabel.wrap { white-space: normal; width: 200px; text-align: center; border-radius: 12px; line-height: 1.5; }
+
+  .node {
+    position: absolute; width: 320px; text-align: left;
+    background: var(--cp-surface); color: var(--cp-text);
+    border: 0; border-radius: 16px; padding: 1rem 1.15rem 1.1rem;
+    font: inherit; cursor: pointer;
+    transition: opacity 400ms, background-color 320ms, color 320ms, transform 320ms;
+  }
+  .node:hover { transform: translateY(-2px); }
+  .node .k { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.45rem; }
+  .node .k .n { color: var(--cp-primary); }
+  .node h3 { font-family: var(--font-display); font-weight: 500; font-size: 1.15rem; line-height: 1.2; margin: 0 0 0.35rem; }
+  .node p { margin: 0; font-size: 0.9rem; line-height: 1.5; color: var(--cp-muted); }
+  .node code { font-family: var(--font-label); font-size: 0.8rem; color: var(--cp-text); word-break: break-all; }
+  .node.side { width: 300px; }
+  .node.human { background: var(--cp-text); color: var(--cp-surface); }
+  .node.human p, .node.human .label { color: color-mix(in srgb, var(--cp-surface) 72%, transparent); }
+  .node.decision {
+    width: auto; border-radius: 999px; padding: 0.7rem 1.4rem; text-align: center;
+    font-family: var(--font-label); font-size: 0.82rem; letter-spacing: 0.06em; text-transform: uppercase;
+  }
+  .node.decision::before { content: "?"; color: var(--cp-primary); margin-right: 0.55rem; }
+  .node.sel { transform: translateY(-2px); }
+  .node.sel:not(.human) { background: color-mix(in srgb, var(--cp-text) 9%, var(--cp-surface)); }
+
+  .cast { display: grid; gap: 1.25rem; margin-top: 1.5rem; }
+  .cast-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem 1rem; }
+  .cast-group { display: grid; gap: 0.6rem; }
+  .cast-row { display: grid; gap: 0.75rem; }
+  .people-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .systems-row { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  @media (max-width: 1000px) { .people-row { grid-template-columns: 1fr; } .systems-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .player {
+    text-align: left; border: 0; border-radius: 16px; padding: 1rem 1.1rem; min-height: 44px;
+    background: var(--cp-surface); color: var(--cp-text); font: inherit;
+    display: flex; align-items: flex-start; gap: 0.85rem;
+    transition: background-color 320ms, color 320ms, transform 320ms;
+  }
+  button.player { cursor: pointer; }
+  button.player:hover { transform: translateY(-2px); }
+  .player[aria-pressed="true"] { background: var(--cp-text); color: var(--cp-surface); }
+  .player[aria-pressed="true"] p, .player[aria-pressed="true"] .label { color: color-mix(in srgb, var(--cp-surface) 72%, transparent); }
+  .player:focus-visible { outline-color: var(--cp-text); }
+  .player b { display: block; font-family: var(--font-display); font-weight: 600; font-size: 1rem; line-height: 1.25; }
+  .player .label { display: block; font-size: 0.66rem; margin: 0.15rem 0 0.35rem; }
+  .player p { margin: 0; font-size: 0.85rem; line-height: 1.45; color: var(--cp-muted); }
+  .player .avatar { width: 56px; height: 56px; }
+  .systems-row .player { flex-direction: column; gap: 0.6rem; }
+  .engine-row .player { align-items: center; gap: 1.4rem; padding: 1.25rem 1.5rem; }
+  .engine-row .avatar { width: 96px; height: 96px; }
+  .engine-row .player b { font-family: var(--font-display); font-weight: 500; font-size: clamp(1.5rem, 2.4vw, 2rem); letter-spacing: -0.02em; }
+  .engine-row .player .label { font-size: 0.72rem; color: var(--cp-primary); }
+  .engine-row .player p { font-size: 1rem; max-width: 70ch; }
+  .mono { width: 40px; height: 40px; border-radius: 50%; flex: none; display: grid; place-items: center; background: var(--cp-panel); color: var(--cp-text); font-family: var(--font-label); font-size: 0.78rem; letter-spacing: 0.04em; }
+  .player[aria-pressed="true"] .mono { background: var(--cp-surface); color: var(--cp-text); }
+  .people { display: flex; gap: 1rem; margin-top: 0.8rem; }
+  .person { display: flex; align-items: center; gap: 0.55rem; min-width: 0; }
+  .person b { display: block; font-family: var(--font-display); font-weight: 600; font-size: 0.9rem; line-height: 1.2; }
+  .person small { display: block; font-size: 0.72rem; line-height: 1.3; opacity: 0.72; }
+  .avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex: none; display: grid; place-items: center; background: var(--cp-panel); color: var(--cp-text); font-family: var(--font-display); font-weight: 600; font-size: 0.95rem; filter: grayscale(1); }
+  .chips-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin: 0.7rem 0; }
+  .chip { background: var(--cp-panel); border-radius: 10px; padding: 0.45rem 0.6rem; font-size: 0.8rem; line-height: 1.35; color: var(--cp-text); }
+  .chip.wide { grid-column: span 2; }
+  .chip b { font-family: var(--font-display); font-weight: 600; }
+
+  /* Footer */
+  footer { margin: var(--hero-inset); margin-top: 3rem; background: var(--cp-footer-bg); color: var(--cp-footer-text); border-radius: clamp(14px, 1.5vw, 26px); padding: 2.5rem var(--gutter); }
+  footer .inner { max-width: var(--wide); margin: 0 auto; display: grid; gap: 0.6rem; }
+  footer p { margin: 0; font-size: 0.92rem; line-height: 1.55; color: var(--cp-footer-muted); max-width: 110ch; }
+  footer strong { color: var(--cp-footer-text); font-weight: 600; }
+  footer a { color: var(--cp-footer-text); text-underline-offset: 3px; }
+  footer a:hover { color: var(--cp-primary); }
+  .legend { display: flex; flex-wrap: wrap; gap: 1.5rem; margin-top: 0.5rem; }
+  .legend span { display: inline-flex; align-items: center; gap: 0.5rem; }
+  .sw { width: 28px; height: 0; border-top: 2px solid var(--cp-footer-muted); }
+  .sw.dash { border-top-style: dashed; }
+  .sw.hot { border-top-color: var(--cp-primary); border-top-width: 3px; }
+  .sw.inv { width: 14px; height: 14px; border: 0; border-radius: 4px; background: var(--cp-footer-text); }
+  .sw.plan { width: 14px; height: 14px; border: 1.5px dashed var(--cp-footer-muted); border-radius: 4px; }
+
+  /* Phases */
+  .phases { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; margin-top: 1rem; }
+  .phase {
+    text-align: left; border: 0; border-radius: 16px; padding: 1.1rem 1.25rem 1.2rem; min-height: 44px;
+    background: var(--cp-surface); color: var(--cp-text); font: inherit; cursor: pointer;
+    display: grid; gap: 0.35rem; align-content: start;
+    transition: background-color 320ms, color 320ms, opacity 400ms, transform 320ms;
+  }
+  .phase h2 { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: 1.25rem; line-height: 1.2; }
+  .phase p { margin: 0; font-size: 0.92rem; line-height: 1.5; color: var(--cp-muted); }
+  .phase .label { display: flex; align-items: center; gap: 0.5rem; }
+  .phase[aria-pressed="true"] { background: var(--cp-text); color: var(--cp-surface); }
+  .phase[aria-pressed="true"] p, .phase[aria-pressed="true"] .label { color: color-mix(in srgb, var(--cp-surface) 72%, transparent); }
+  .phase.ahead { opacity: 0.55; }
+  .phase:hover { transform: translateY(-2px); }
+  .phase:focus-visible { outline-color: var(--cp-text); }
+  @media (max-width: 800px) { .phases { grid-template-columns: 1fr; } }
+
+  .node.planned { background: transparent; border: 1.5px dashed color-mix(in srgb, var(--cp-muted) 75%, transparent); }
+  .node.planned.sel { background: color-mix(in srgb, var(--cp-text) 6%, transparent); }
+  .tag { font-family: var(--font-label); font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--cp-primary); background: color-mix(in srgb, var(--cp-primary) 14%, transparent); border-radius: 999px; padding: 0.1rem 0.5rem; margin-left: auto; white-space: nowrap; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; animation: none !important; }
+    .node:hover, .node.sel, .btn:hover, .btn:focus-visible { transform: none; }
+    .edge.hot { stroke-dasharray: none; }
+  }
+</style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="chrome">
+        <div class="brand"><span class="roundel" aria-hidden="true"></span><span class="label" style="color:var(--cp-text)">CannaPlanners / Content engine</span></div>
+        <button class="btn theme-toggle" id="theme" type="button" aria-label="Switch appearance"><span class="thumb" aria-hidden="true"></span><span id="theme-label">Light</span></button>
+      </div>
+      <h1>From Airtable order to reviewable draft</h1>
+      <p class="lede">The run as it works today, plus what’s on the roadmap. Choose a phase to see how the flow changes, pick a route, or select any step to trace it.</p>
+      <span class="label">Live flow · repository behavior inspected October 15, 2026</span>
+      <section class="cast" aria-labelledby="cast-title">
+        <div class="cast-head"><span class="label kicker" id="cast-title">The players</span><span class="label">Select a player to see where they appear</span></div>
+        <div class="cast-group">
+          <span class="label">The engine</span>
+          <div class="cast-row engine-row" id="cast-engine"></div>
+        </div>
+        <div class="cast-group">
+          <span class="label">People</span>
+          <div class="cast-row people-row" id="cast-people"></div>
+        </div>
+        <div class="cast-group">
+          <span class="label">Systems</span>
+          <div class="cast-row systems-row" id="cast-systems"></div>
+        </div>
+      </section>
+      <span class="label kicker" style="margin-top:1rem">Roadmap phases</span>
+      <div class="phases" style="margin-top:0" role="group" aria-label="Show the flow through a phase">
+        <button class="phase" type="button" data-phase="1" aria-pressed="false">
+          <span class="label">Phase 1 · Live now</span>
+          <h2>Generation pipeline</h2>
+          <p>Airtable order, GitHub Actions and Python, OpenAI draft, validation and repair, writeback, human review.</p>
+        </button>
+        <button class="phase" type="button" data-phase="2" aria-pressed="false">
+          <span class="label">Phase 2 · Roadmap</span>
+          <h2>Pre- and post-run skills</h2>
+          <p>Enrichment gathers facts first, seed generation runs on all queued content, compliance checks last. Optional targeted regen.</p>
+        </button>
+        <button class="phase" type="button" data-phase="3" aria-pressed="true">
+          <span class="label">Phase 3 · Roadmap</span>
+          <h2>Direct WordPress publishing</h2>
+          <p>Post approved content from Airtable to client WordPress sites through the REST API.</p>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="toolbar-wrap">
+    <div class="toolbar">
+      <div class="chips" role="group" aria-label="Highlight a route">
+        <button class="btn" type="button" data-route="all" aria-pressed="true">Everything</button>
+        <button class="btn" type="button" data-route="success" aria-pressed="false">Success path</button>
+        <button class="btn" type="button" data-route="repair" aria-pressed="false">Repair loop</button>
+        <button class="btn" type="button" data-route="failure" aria-pressed="false">Failure routes</button>
+        <button class="btn" type="button" data-route="build" aria-pressed="false">Build time</button>
+        <button class="btn" type="button" data-route="human" aria-pressed="false">Human gate</button>
+        <button class="btn" type="button" data-route="roadmap" aria-pressed="false">Roadmap</button>
+      </div>
+      <div class="readout" id="readout" aria-live="polite"><span class="dot" aria-hidden="true"></span><span>Select a step to trace it.</span></div>
+    </div>
+  </div>
+
+  <div class="field-wrap">
+    <div class="field">
+      <div class="chart" id="chart">
+        <svg id="edges" aria-hidden="true"></svg>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="inner">
+      <span class="label" style="color:var(--cp-footer-muted)">Reading the chart</span>
+      <div class="legend label" style="color:var(--cp-footer-text)">
+        <span><i class="sw"></i>Flow</span>
+        <span><i class="sw hot"></i>Highlighted route</span>
+        <span><i class="sw inv"></i>Human gate</span>
+        <span><i class="sw plan"></i>Planned · not yet built</span>
+      </div>
+      <p style="margin-top:1rem"><strong>Phases:</strong> Phase 1 is the pipeline running today. Phase 2 adds the enrichment and compliance skills around it, plus targeted manual regen. Phase 3 adds direct publishing to client WordPress sites. Phase 2 and 3 steps are roadmapped and not yet fully implemented.</p>
+      <p style="margin-top:1rem"><strong>Safeguards:</strong> API retries for transient failures; dry_run still generates but skips writeback; print-prompt skips generation.</p>
+      <p>Source: <a href="https://github.com/CannaPlanners-Dev/lifted-content-gen" rel="nofollow">CannaPlanners-Dev/lifted-content-gen</a> · generate-content.yml · Python runner · modular prompt tracks · README</p>
+    </div>
+  </footer>
+
+<script>
+(() => {
+  const COL = [190, 620, 1050];
+  const RAIL = { feed: 405, yesA: 250, yesB: 330, review: 845, fail: 1050, regen: 12 };
+
+  const nodes = [
+    { id: "B", row: 1, col: 1, kicker: "Run", title: "Start a generation run", body: "GitHub Actions: <code>workflow_dispatch</code>", routes: ["success"],
+      from2: { kicker: "Seed generation", title: "Seed generation run", body: "GitHub Actions: <code>workflow_dispatch</code> on all queued content, after enrichment.", tag: "Phase 2" } },
+    { id: "C", row: 2, col: 1, kicker: "Runner", title: "Python runner", body: "<code>scripts/generate_blog_from_airtable.py</code>", routes: ["success"] },
+    { id: "D", row: 2, col: 0, side: true, kicker: "Input", title: "Airtable content order", body: "Client, topic, keywords, references, source preview, constraints and status.", routes: ["success"] },
+    { id: "X", row: 3, col: 0, side: true, phase: 2, kicker: "Pre-run skill", title: "Enrichment skill", body: "Fact gatherer: collects facts and sources for each queued order before generation.", routes: ["success", "roadmap"] },
+    { id: "E", row: 3, col: 1, kicker: "Load", title: "Load selected records", body: "Content Order ID, record ID, or queued batch; page/topic filters and force option.", routes: ["success", "failure"] },
+    { id: "PA", row: 4, col: 0, side: true, kicker: "Build time · before runtime", title: "Versioned prompt assembly", html:
+        '<div class="chips-inner"><span class="chip"><b>Inputs v2</b></span><span class="chip"><b>Core v4</b></span><span class="chip wide"><b>Content module</b><br>Blog, brand, location, deals or local SEO</span></div><p><code>assemble_prompts.py</code> → committed assembled prompt artifacts.</p>', routes: ["build"] },
+    { id: "F", row: 4, col: 1, kicker: "Template", title: "Resolve row’s template", body: "Content Module overrides run-level selection.", routes: ["success", "build"] },
+    { id: "G", row: 5, col: 1, kicker: "Inputs", title: "Map Airtable fields to inputs", body: "Bound source preview; substitute placeholders.", routes: ["success"] },
+    { id: "H", row: 6, col: 1, kicker: "Generation", title: "OpenAI Responses API", body: "Current track: strict JSON schema + web search.", routes: ["success", "failure"] },
+    { id: "I", row: 7, col: 1, kicker: "Quality gates", title: "Parse, clean and validate", body: "Required fields, metadata, body HTML, links, length and safety checks.", routes: ["success", "repair"] },
+    { id: "J", row: 8, col: 1, decision: true, title: "Validation passes?", routes: ["success", "repair"] },
+    { id: "L", row: 9, col: 1, kicker: "Repair", title: "Repair response", body: "Up to 2 additional API requests; no web search during repair.", routes: ["repair"] },
+    { id: "M", row: 10, col: 1, decision: true, title: "Valid after repair?", routes: ["repair"] },
+    { id: "N", row: 11, col: 1, decision: true, title: "Usable draft body remains?", routes: ["repair", "failure"] },
+    { id: "O", row: 12, col: 1, kicker: "Error lane", title: "Preserve partial draft", body: "Status: error; Needs Verification: yes; Generation Error and editor notes.", routes: ["repair", "failure"] },
+    { id: "P", row: 12, col: 2, side: true, kicker: "Error lane", title: "Hard failure", body: "Attempt error-state writeback; previous draft fields may remain.", routes: ["failure"] },
+    { id: "K", row: 13, col: 1, kicker: "Writeback", title: "PATCH the same Airtable record", body: "Draft + metadata + generation details.", routes: ["success", "repair", "failure"] },
+    { id: "S", row: 14, col: 1, kicker: "Stored", title: "Stored result", body: "Generated or error status; review flags may require attention.", routes: ["success"] },
+    { id: "Y", row: 15, col: 1, phase: 2, kicker: "Post-run skill", title: "Compliance skill", body: "Checks each draft against the state regulatory markdowns and flags issues for review.", routes: ["success", "roadmap"] },
+    { id: "R", row: 16, col: 1, human: true, kicker: "Human gate", title: "Human editorial review", body: "John / Kyle: cleanup, verification, approval.", routes: ["success", "failure", "human"],
+      people: [{ name: "John", role: "Editorial / SEO feedback", img: "images/john.png" }, { name: "Kyle", role: "Human review gate", img: "images/kyle.png", focus: "50% 40%" }] },
+    { id: "Z", row: 16, col: 0, side: true, phase: 2, kicker: "Optional", title: "Targeted manual regen", body: "Rerun selected records with improved editor notes.", routes: ["human", "roadmap"] },
+    { id: "T", row: 17, col: 1, human: true, kicker: "Handoff", title: "Publishing handoff", body: "Separate from the generation runner.", routes: ["success", "human"] },
+    { id: "W", row: 18, col: 1, phase: 3, kicker: "Publish", title: "Post to client WordPress", body: "Approved content goes from Airtable to the client’s WordPress site through the REST API.", routes: ["success", "roadmap"] },
+  ];
+
+  const edges = [
+    { f: "B", t: "C", routes: ["success"] },
+    { f: "C", t: "E", routes: ["success"] },
+    { f: "D", t: "E", fs: "right", via: [["x", RAIL.feed]], ts: "left", max: 1, routes: ["success"] },
+    { f: "D", t: "X", routes: ["success", "roadmap"] },
+    { f: "X", t: "E", fs: "right", via: [["x", RAIL.feed]], ts: "left", routes: ["success", "roadmap"] },
+    { f: "E", t: "F", routes: ["success"] },
+    { f: "PA", t: "F", fs: "right", via: [["x", RAIL.feed]], ts: "left", routes: ["build"] },
+    { f: "F", t: "G", routes: ["success"] },
+    { f: "G", t: "H", routes: ["success"] },
+    { f: "H", t: "I", routes: ["success"] },
+    { f: "I", t: "J", routes: ["success", "repair"] },
+    { f: "J", t: "K", fs: "left", via: [["x", RAIL.yesA]], ts: "left", label: "Yes", labelSeg: 1, routes: ["success"] },
+    { f: "J", t: "L", label: "No", routes: ["repair"] },
+    { f: "L", t: "M", routes: ["repair"] },
+    { f: "M", t: "K", fs: "left", via: [["x", RAIL.yesB]], ts: "left", label: "Yes", labelSeg: 1, routes: ["repair"] },
+    { f: "M", t: "N", label: "No", routes: ["repair"] },
+    { f: "N", t: "O", label: "Yes", routes: ["repair", "failure"] },
+    { f: "N", t: "P", fs: "right", via: [["x", RAIL.fail]], ts: "top", label: "No", labelSeg: 0, routes: ["failure"] },
+    { f: "E", t: "P", fs: "right", via: [["x", RAIL.fail]], ts: "top", label: "Record / template / input error", labelSeg: 0, routes: ["failure"] },
+    { f: "H", t: "P", fs: "right", via: [["x", RAIL.fail]], ts: "top", label: "API / network failure after retries", labelSeg: 0, routes: ["failure"] },
+    { f: "O", t: "K", routes: ["repair", "failure"] },
+    { f: "O", t: "R", fs: "right", via: [["x", RAIL.review]], ts: "right", label: "Requires correction and review", labelSeg: 1, labelWidth: 116, routes: ["failure", "human"] },
+    { f: "P", t: "R", fs: "bottom", ts: "right", label: "Error-state writeback", labelSeg: 0, routes: ["failure"] },
+    { f: "K", t: "S", routes: ["success"] },
+    { f: "S", t: "R", max: 1, routes: ["success", "human"] },
+    { f: "S", t: "Y", routes: ["success", "roadmap"] },
+    { f: "Y", t: "R", label: "Compliance flags", routes: ["success", "human", "roadmap"] },
+    { f: "R", t: "Z", fs: "left", ts: "right", label: "Optional", routes: ["human", "roadmap"] },
+    { f: "Z", t: "G", fs: "left", via: [["x", RAIL.regen]], ts: "left", label: "Improved notes", labelSeg: 1, routes: ["human", "roadmap"] },
+    { f: "R", t: "T", routes: ["success", "human"] },
+    { f: "T", t: "W", label: "Approved in Airtable", routes: ["success", "roadmap"] },
+  ];
+
+  const players = [
+    { id: "promptson", group: "engine", name: "Hunter S. Promptson", role: "a.k.a. the Lifted Content Engine", img: "images/promptson.png", focus: "50% 38%", about: "The man, the myth, the machine. Our internal name for the whole engine: he takes the brief, drafts the piece, checks his own work, files it back to Airtable, and never publishes without a human signing off.", nodes: nodes.filter(n => !n.human && n.id !== "Z").map(n => n.id) },
+    { id: "scott", group: "people", name: "Scott", role: "Tech owner", img: "images/scott.png", focus: "50% 35%", about: "Owns the engine’s technical build and roadmap delivery." },
+    { id: "john", group: "people", name: "John", role: "Product owner", img: "images/john.png", about: "Owns the product direction; gives editorial and SEO feedback at review.", nodes: ["R"] },
+    { id: "kyle", group: "people", name: "Kyle", role: "Human review gate", img: "images/kyle.png", focus: "50% 40%", about: "Reviews every draft: resolves flags, checks facts, approves.", nodes: ["R"] },
+    { id: "airtable", group: "systems", name: "Airtable", mono: "AT", role: "Orders + records", about: "Content orders come in; drafts, metadata and status are written back.", nodes: ["D", "E", "K", "S", "W"] },
+    { id: "github", group: "systems", name: "GitHub Actions", mono: "GH", role: "Starts runs", about: "Kicks off each run with workflow_dispatch.", nodes: ["B"] },
+    { id: "python", group: "systems", name: "Python runner", mono: "PY", role: "Orchestrates", about: "Loads records, renders prompts, validates, repairs and writes back.", nodes: ["PA", "C", "E", "F", "G", "I", "J", "L", "M", "N", "O", "P", "K"] },
+    { id: "openai", group: "systems", name: "OpenAI", mono: "AI", role: "Responses API", about: "Drafts each piece as strict JSON, plus up to 2 repair requests.", nodes: ["H", "L"] },
+    { id: "skills", group: "systems", name: "Skills", mono: "SK", role: "Phase 2 · roadmap", about: "Enrichment runs first; compliance checks against state regulatory markdowns last.", nodes: ["X", "Y"], phase: 2 },
+    { id: "wordpress", group: "systems", name: "WordPress", mono: "WP", role: "Phase 3 · roadmap", about: "Client sites receive approved posts through the REST API.", nodes: ["W"], phase: 3 },
+  ];
+
+  const chart = document.getElementById("chart");
+  const svg = document.getElementById("edges");
+  const readout = document.getElementById("readout");
+  const byId = {};
+  const SVGNS = "http://www.w3.org/2000/svg";
+
+  let phase = 3;
+  nodes.forEach(n => {
+    n.phase = n.phase || 1;
+    const el = document.createElement("button");
+    el.type = "button";
+    el.className = "node" + (n.side ? " side" : "") + (n.human ? " human" : "") + (n.decision ? " decision" : "") + (n.phase > 1 ? " planned" : "");
+    el.dataset.id = n.id;
+    chart.appendChild(el);
+    byId[n.id] = { ...n, el };
+  });
+
+  const shown = id => byId[id].phase <= phase;
+  const edgeShown = e => shown(e.f) && shown(e.t) && (!e.max || phase <= e.max);
+
+  function renderNodes() {
+    let count = 0;
+    nodes.forEach(n => {
+      const o = byId[n.id];
+      o.el.hidden = !shown(n.id);
+      if (o.el.hidden) return;
+      if (n.decision) { o.el.textContent = n.title; return; }
+      const v = phase >= 2 && n.from2 ? { ...n, ...n.from2 } : n;
+      o.title = v.title;
+      const tag = n.phase > 1 ? `Phase ${n.phase}` : v.tag ? `${v.tag} change` : "";
+      count++;
+      o.el.innerHTML = `<div class="k label"><span class="n">${String(count).padStart(2, "0")}</span><span>${v.kicker}</span>${tag ? `<span class="tag">${tag}</span>` : ""}</div><h3>${v.title}</h3>${v.html || `<p>${v.body}</p>`}${n.people ? `<div class="people">${n.people.map(p => `<span class="person">${p.img ? `<img class="avatar" src="${p.img}" alt=""${p.focus ? ` style="object-position:${p.focus}"` : ""}>` : `<span class="avatar" aria-hidden="true">${p.name[0]}</span>`}<span><b>${p.name}</b><small>${p.role}</small></span></span>`).join("")}</div>` : ""}`;
+    });
+  }
+
+  const GAP = 76;
+  function layout() {
+    const rows = Math.max(...nodes.map(n => n.row)) + 1;
+    const rowH = Array(rows).fill(0);
+    nodes.forEach(n => { if (shown(n.id)) rowH[n.row] = Math.max(rowH[n.row], byId[n.id].el.offsetHeight); });
+    const rowTop = [];
+    let y = 0;
+    for (let r = 0; r < rows; r++) { rowTop[r] = y; if (rowH[r]) y += rowH[r] + GAP; }
+    nodes.forEach(n => {
+      const o = byId[n.id], w = o.el.offsetWidth, h = o.el.offsetHeight;
+      const top = rowTop[n.row] + (rowH[n.row] - h) / 2;
+      o.box = { x: COL[n.col] - w / 2, y: top, w, h };
+      o.el.style.left = o.box.x + "px";
+      o.el.style.top = o.box.y + "px";
+    });
+    chart.style.height = (y - GAP) + "px";
+    drawEdges();
+  }
+
+  function side(b, s) {
+    if (s === "top") return [b.x + b.w / 2, b.y];
+    if (s === "left") return [b.x, b.y + b.h / 2];
+    if (s === "right") return [b.x + b.w, b.y + b.h / 2];
+    return [b.x + b.w / 2, b.y + b.h];
+  }
+
+  function route(e) {
+    const a = byId[e.f].box, b = byId[e.t].box;
+    const ts = e.ts || "top";
+    const pts = [side(a, e.fs || "bottom")];
+    for (const [axis, v] of e.via || []) {
+      const [px, py] = pts[pts.length - 1];
+      pts.push(axis === "x" ? [v, py] : [px, v]);
+    }
+    const end = side(b, ts);
+    const [px, py] = pts[pts.length - 1];
+    if (ts === "top") {
+      if (Math.abs(px - end[0]) > 0.5) { const my = end[1] - 28; pts.push([px, my], [end[0], my]); }
+    } else {
+      pts.push([px, end[1]]);
+    }
+    pts.push(end);
+    return { pts, ts };
+  }
+
+  function arrow(end, ts) {
+    const [x, y] = end, s = 6;
+    if (ts === "top") return `M${x - s} ${y - s * 1.6} L${x} ${y} L${x + s} ${y - s * 1.6} Z`;
+    if (ts === "left") return `M${x - s * 1.6} ${y - s} L${x} ${y} L${x - s * 1.6} ${y + s} Z`;
+    return `M${x + s * 1.6} ${y - s} L${x} ${y} L${x + s * 1.6} ${y + s} Z`;
+  }
+
+  function drawEdges() {
+    svg.innerHTML = "";
+    chart.querySelectorAll(".elabel").forEach(l => l.remove());
+    edges.forEach(e => {
+      e.path = e.head = e.lab = null;
+      if (!edgeShown(e)) return;
+      const { pts, ts } = route(e);
+      const p = document.createElementNS(SVGNS, "path");
+      p.setAttribute("d", pts.map((q, i) => (i ? "L" : "M") + q[0] + " " + q[1]).join(" "));
+      const planned = byId[e.f].phase > 1 || byId[e.t].phase > 1;
+      p.setAttribute("class", "edge" + (e.dashed || planned ? " dashed" : ""));
+      const h = document.createElementNS(SVGNS, "path");
+      h.setAttribute("d", arrow(pts[pts.length - 1], ts));
+      h.setAttribute("class", "head");
+      svg.append(p, h);
+      e.path = p; e.head = h; e.lab = null;
+      if (e.label) {
+        let seg = e.labelSeg;
+        if (seg === undefined) {
+          let best = 0, len = -1;
+          for (let i = 0; i < pts.length - 1; i++) { const l = Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]); if (l > len) { len = l; best = i; } }
+          seg = best;
+        }
+        const [p1, p2] = [pts[seg], pts[seg + 1]];
+        const l = document.createElement("span");
+        l.className = "elabel" + (e.label.length > 24 && e.ts !== "left" && e.labelSeg === 0 ? " wrap" : "");
+        l.textContent = e.label;
+        if (e.labelWidth) { l.classList.add("wrap"); l.style.width = e.labelWidth + "px"; }
+        l.style.left = (p1[0] + p2[0]) / 2 + "px";
+        l.style.top = (p1[1] + p2[1]) / 2 + "px";
+        chart.appendChild(l);
+        e.lab = l;
+      }
+    });
+    apply();
+  }
+
+  let state = { route: "all", node: null };
+
+  function apply() {
+    const { route: r, node } = state;
+    let liveNodes, liveEdges;
+    const pl = state.player && players.find(p => p.id === state.player);
+    if (pl) {
+      liveNodes = new Set(pl.nodes.filter(shown));
+      liveEdges = new Set(edges.filter(e => edgeShown(e) && liveNodes.has(e.f) && liveNodes.has(e.t)));
+    } else if (node) {
+      liveEdges = new Set(edges.filter(e => edgeShown(e) && (e.f === node || e.t === node)));
+      liveNodes = new Set([node]);
+      liveEdges.forEach(e => { liveNodes.add(e.f); liveNodes.add(e.t); });
+    } else if (r !== "all") {
+      liveEdges = new Set(edges.filter(e => e.routes.includes(r)));
+      liveNodes = new Set(nodes.filter(n => n.routes.includes(r)).map(n => n.id));
+    }
+    nodes.forEach(n => {
+      const el = byId[n.id].el;
+      el.classList.toggle("dim", !!liveNodes && !liveNodes.has(n.id));
+      el.classList.toggle("sel", node === n.id);
+      el.setAttribute("aria-pressed", node === n.id ? "true" : "false");
+    });
+    edges.forEach(e => {
+      const on = liveEdges ? liveEdges.has(e) : false;
+      const dim = liveEdges ? !on : false;
+      [e.path, e.head, e.lab].forEach(x => { if (!x) return; x.classList.toggle("hot", on); x.classList.toggle("dim", dim); });
+    });
+    document.querySelectorAll("[data-player]").forEach(b => b.setAttribute("aria-pressed", b.dataset.player === state.player ? "true" : "false"));
+    if (pl) {
+      const hiddenNote = pl.phase && pl.phase > phase ? ` Choose phase ${pl.phase} above to show these steps.` : "";
+      readout.innerHTML = `<span class="dot" aria-hidden="true"></span><span><strong>${pl.name}</strong> · ${pl.about}${hiddenNote}</span>`;
+    } else if (node) {
+      const n = byId[node];
+      const from = edges.filter(e => edgeShown(e) && e.t === node).map(e => byId[e.f].title);
+      const to = edges.filter(e => edgeShown(e) && e.f === node).map(e => byId[e.t].title);
+      readout.innerHTML = `<span class="dot" aria-hidden="true"></span><span><strong>${n.title}</strong> · ${from.length ? "from " + from.join(", ") : "starting point"} · ${to.length ? "leads to " + to.join(", ") : "end of the line"}</span>`;
+    } else {
+      const names = { all: "Select a step to trace it.", success: "Success path: one record in, one reviewed draft out.", repair: "Repair loop: up to 2 extra API requests, then validate again.", failure: "Failure routes: errors are written back and kept inspectable, never auto-published.", build: "Build time: prompt layers are assembled and committed before any run.", human: "Human gate: Kyle and John review before anything is published.", roadmap: phase === 1 ? "Roadmap steps appear in phases 2 and 3. Choose a phase above to show them." : "Roadmap: planned skills, targeted regen and direct publishing, not yet fully built." };
+      readout.innerHTML = `<span class="dot" aria-hidden="true"></span><span>${names[r]}</span>`;
+    }
+  }
+
+  document.querySelectorAll("[data-route]").forEach(b => b.addEventListener("click", () => {
+    state = { route: b.dataset.route, node: null, player: null };
+    document.querySelectorAll("[data-route]").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+    apply();
+  }));
+  chart.addEventListener("click", ev => {
+    const el = ev.target.closest(".node");
+    if (!el) return;
+    state.node = state.node === el.dataset.id ? null : el.dataset.id;
+    state.player = null;
+    apply();
+  });
+
+  const avatar = p => p.img
+    ? `<img class="avatar" src="${p.img}" alt=""${p.focus ? ` style="object-position:${p.focus}"` : ""}>`
+    : `<span class="mono" aria-hidden="true">${p.mono}</span>`;
+  players.forEach(p => {
+    const el = document.createElement(p.nodes ? "button" : "div");
+    el.className = "player";
+    if (p.nodes) { el.type = "button"; el.dataset.player = p.id; el.setAttribute("aria-pressed", "false"); }
+    el.innerHTML = `${avatar(p)}<span><b>${p.name}</b><span class="label">${p.role}</span><p>${p.about}</p></span>`;
+    document.getElementById("cast-" + p.group).appendChild(el);
+    if (p.nodes) el.addEventListener("click", () => {
+      state = { route: "all", node: null, player: state.player === p.id ? null : p.id };
+      document.querySelectorAll("[data-route]").forEach(x => x.setAttribute("aria-pressed", x.dataset.route === "all" ? "true" : "false"));
+      apply();
+    });
+  });
+  chart.addEventListener("keydown", ev => { if (ev.key === "Escape") { state.node = null; apply(); } });
+
+  const phaseBtns = document.querySelectorAll("[data-phase]");
+  function setPhase(p) {
+    phase = p;
+    phaseBtns.forEach(b => {
+      const n = Number(b.dataset.phase);
+      b.setAttribute("aria-pressed", n === p ? "true" : "false");
+      b.classList.toggle("ahead", n > p);
+    });
+    if (state.node && !shown(state.node)) state.node = null;
+    renderNodes();
+    layout();
+  }
+  phaseBtns.forEach(b => b.addEventListener("click", () => setPhase(Number(b.dataset.phase))));
+
+  const root = document.documentElement;
+  const themeBtn = document.getElementById("theme");
+  const syncTheme = () => { document.getElementById("theme-label").textContent = root.getAttribute("data-cp-theme") === "light" ? "Dark" : "Light"; };
+  themeBtn.addEventListener("click", () => {
+    root.classList.add("cp-animate");
+    const light = root.getAttribute("data-cp-theme") !== "light";
+    if (light) root.setAttribute("data-cp-theme", "light"); else root.removeAttribute("data-cp-theme");
+    try { localStorage.setItem("cp-appearance", light ? "light" : "dark"); } catch (e) {}
+    syncTheme();
+  });
+  syncTheme();
+
+  renderNodes();
+  (document.fonts ? document.fonts.ready : Promise.resolve()).then(layout);
+  layout();
+  window.addEventListener("resize", () => requestAnimationFrame(layout));
+})();
+</script>
+</body>
+</html>
