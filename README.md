@@ -18,6 +18,9 @@ Run `python3 scripts/validate_content_engine_demo.py`, preview with
 The Pages workflow publishes only `public/` to the same demo link. All other
 repository files are excluded from the site. No secrets are required.
 
+The header uses the official CannaPlanners vector logo from the company site,
+with wordmark color following the light/dark theme.
+
 The page uses `noindex,nofollow`, and its source link uses `rel="nofollow"`. These
 are cooperative indexing controls, not access security. Do not add robots.txt
 Disallow rules that prevent crawlers from reading the directives. Anyone can
